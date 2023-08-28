@@ -1,16 +1,19 @@
-import streamlit as st 
-import plotly.express as px 
-import pandas as pd
+
+from azure.cosmosdb.table.tableservice import TableService
 
 import os
 
-from azure.cosmosdb.table.tableservice import TableService
+import streamlit as st 
+
+import plotly.express as px 
+import pandas as pd
+
+import numpy as np
 
 from azure.keyvault.secrets import SecretClient
 from azure.identity import ClientSecretCredential
 
-
-####### quick helper ###########
+##################
 def init_table_service(connection_string):
     table_service = TableService(connection_string = connection_string)
     return table_service
@@ -31,7 +34,6 @@ def get_data_from_table_storage_table(st, table_service, filter_query):
         yield record
 
 ##################
-
 
 myTenantID = "4ce25b52-c440-498c-a87d-973950aced4d"
 myClientID = "2ed9aaa7-33e9-4deb-b383-a4ff97481c88"
@@ -61,15 +63,39 @@ df['long'] = pd.to_numeric(df.long)
 #df.drop(columns=['RowKey', 'Timestamp', 'des3', 'des4', 'des5', 'des6', 'des7', 'desCount', 'displayType', 'extent', 'future', 'isBlocked', 'point', 'startTimestamp', 'status', 'lastRunTime'])
 df.drop(columns=['RowKey', 'Timestamp', 'des3', 'des4', 'des5', 'desCount', 'displayType', 'extent', 'future', 'isBlocked', 'point', 'startTimestamp', 'status', 'lastRunTime', 'etag'])
 
-fig = px.scatter_mapbox(df,
-                        lon = df['long'],
-                        lat = df['lat'],
+###### start st & plotly
+
+AB = df.PartitionKey.unique()
+
+st.set_page_config(page_title="oDataAB", page_icon="https://ftdata.blob.core.windows.net/images/logos/amc_logo_240.png")
+
+st.write(" :bar_chart: Verkehrsinformationen D-Autobahn")
+
+st.markdown('<style>div.block-container{padding-top:3rem;}</style>', unsafe_allow_html=True)
+
+sidebar = st.sidebar
+location_selector = sidebar.multiselect(
+    "Autobahnen",
+    AB,
+    default=AB,
+    placeholder='Autobahn'
+)
+st.markdown(f"# Aktuell ausgewählt {', '.join(location_selector)}")
+
+# damit der plot immer wieder aktuallisiert wird
+plot_spot = st.empty()
+
+sLoc = np.array(location_selector)
+df_filter = df[df['PartitionKey'].isin(sLoc)]
+
+fig = px.scatter_mapbox(df_filter,
+                        lon = df_filter['long'],
+                        lat = df_filter['lat'],
                         zoom = 5,
-                        color = df['PartitionKey'],
                         width = 640,
                         height = 640,
                         title = 'Warnungen',
-                        hover_name = df['title'],
+                        hover_name = df_filter['title'],
                         hover_data = {
                             "lat": False,
                             "long": False,
@@ -95,17 +121,16 @@ fig.update_layout(hovermode="x")
 fig.update_layout(mapbox_style="open-street-map")
 fig.update_layout(margin={"r":0,"t":30,"l":0,"b":0})
 
+fig.update_mapboxes(center_lat=51)
+fig.update_mapboxes(center_lon=10.5)
+
 fig.update_layout(hoverlabel = dict(
     font_size = 10,
     font_family = "Arial"
 ))
 
-###############
+with plot_spot:
+    st.plotly_chart(fig,
+                    theme="streamlit"
+                    )
 
-st.write("""# Verkehrsinformationen D-Autobahn""")
-
-st.plotly_chart(fig,
-                theme="streamlit"
-                )
-
-st.write('ende')
