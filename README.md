@@ -21,7 +21,7 @@ Die Tenantrelevanten Daten werden natürlich über Enviroment-Daten und Azure Ke
 Dann werden die Daten über eine Azure-Web-App via Streamlit und Plotly aufbereitet und zur Verfügung gestellt.
 Das ganze deployment erfolgt über Github.
 
-![Screenshot](AzureWebAp.png)
+![Screenshot](AzureWebApp.png)
 
 Gestartet wird die app.py
 
