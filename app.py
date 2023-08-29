@@ -96,7 +96,6 @@ if stoerung_selector == 'Baustellen':
     df_filter = df_r[df_r['PartitionKey'].isin(AB)]
     #st.write(AB)
 
-#AB = df.PartitionKey.unique()
 
 location_selector = sidebar.multiselect(
     "Autobahnen",
