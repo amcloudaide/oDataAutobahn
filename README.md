@@ -6,5 +6,9 @@ Einfache Streamlit app on Azure Web App Service zum anzeigen diversen Informatio
 Die Daten stammen vom oDataProjekt der Autobahngesellschaft
 https://autobahn.api.bund.dev/
 
-Allerdings werden die Daten von mir vorher in AzureTables kopiert damit ich spaeter mal mit einer Zeitreihe arbeiten kann :)
+Zuerst werden die Daten via AzureFunctions in eine AzureTable 'kopiert'
+
+![Screenshot](AzureFunctions.png)
+
+
 
