@@ -54,43 +54,72 @@ table_service = init_table_service(connection_string)
 
 sKey = "status eq 'current'" 
 
-df = get_dataframe_from_table_storage_table('oDataABWarnings', table_service, sKey)
-df['lat'] = pd.to_numeric(df.lat)
-df['long'] = pd.to_numeric(df.long)
+df_r = get_dataframe_from_table_storage_table('oDataABRoadworks', table_service, sKey)
+df_r['lat'] = pd.to_numeric(df_r.lat)
+df_r['long'] = pd.to_numeric(df_r.long)
+
+df_c = get_dataframe_from_table_storage_table('oDataABClosure', table_service, sKey)
+df_c['lat'] = pd.to_numeric(df_c.lat)
+df_c['long'] = pd.to_numeric(df_c.long)
+
+df_w = get_dataframe_from_table_storage_table('oDataABWarnings', table_service, sKey)
+df_w['lat'] = pd.to_numeric(df_w.lat)
+df_w['long'] = pd.to_numeric(df_w.long)
 
 ###### start st & plotly
 
-AB = df.PartitionKey.unique()
-
 st.set_page_config(page_title="oDataAB", page_icon="https://ftdata.blob.core.windows.net/images/logos/amc_logo_240.png")
-
 st.write(" :bar_chart: Verkehrsinformationen D-Autobahn")
-
 st.markdown('<style>div.block-container{padding-top:3rem;}</style>', unsafe_allow_html=True)
 
 sidebar = st.sidebar
+
+stoerung_selector = sidebar.radio(
+    "Störungen",
+    ['Baustellen', 'Sperrungen', 'Warnungen'],
+    index=2
+)
+
+if stoerung_selector == 'Warnungen':
+    #st.write('a')
+    AB = df_w.PartitionKey.unique()
+    df_filter = df_w[df_w['PartitionKey'].isin(AB)]
+    #st.write(AB)
+if stoerung_selector == 'Sperrungen':
+    #st.write('b')
+    AB = df_c.PartitionKey.unique()
+    df_filter = df_c[df_c['PartitionKey'].isin(AB)]
+    #st.write(AB)
+if stoerung_selector == 'Baustellen':
+    #st.write('c')
+    AB = df_r.PartitionKey.unique()
+    df_filter = df_r[df_r['PartitionKey'].isin(AB)]
+    #st.write(AB)
+
+#AB = df.PartitionKey.unique()
+
 location_selector = sidebar.multiselect(
     "Autobahnen",
     AB,
     default=AB,
     placeholder='Autobahn'
 )
-st.markdown(f"# Aktuell ausgewählt {', '.join(location_selector)}")
+sLoc = np.array(location_selector)
+df_sLoc = df_filter[df_filter['PartitionKey'].isin(sLoc)]
+
+st.markdown(f"Aktuell ausgewählt {', '.join(location_selector)}")
 
 # damit der plot immer wieder aktuallisiert wird
 plot_spot = st.empty()
 
-sLoc = np.array(location_selector)
-df_filter = df[df['PartitionKey'].isin(sLoc)]
-
-fig = px.scatter_mapbox(df_filter,
-                        lon = df_filter['long'],
-                        lat = df_filter['lat'],
+fig = px.scatter_mapbox(df_sLoc,
+                        lon = df_sLoc['long'],
+                        lat = df_sLoc['lat'],
                         zoom = 5,
                         width = 640,
                         height = 640,
-                        title = 'Warnungen',
-                        hover_name = df_filter['title'],
+                        title = stoerung_selector,
+                        hover_name = df_sLoc['title'],
                         hover_data = {
                             "lat": False,
                             "long": False,
