@@ -1,19 +1,16 @@
 
 from azure.cosmosdb.table.tableservice import TableService
-
-import os
-
-import streamlit as st 
-
-import plotly.express as px 
-import pandas as pd
-
-import numpy as np
-
 from azure.keyvault.secrets import SecretClient
 from azure.identity import ClientSecretCredential
 
-##################
+import os
+import streamlit as st
+import plotly.express as px 
+import pandas as pd
+import numpy as np
+
+######## helper ##########
+
 def init_table_service(connection_string):
     table_service = TableService(connection_string = connection_string)
     return table_service
@@ -35,9 +32,9 @@ def get_data_from_table_storage_table(st, table_service, filter_query):
 
 ##################
 
-myTenantID = "4ce25b52-c440-498c-a87d-973950aced4d"
-myClientID = "2ed9aaa7-33e9-4deb-b383-a4ff97481c88"
-myClientSecret = "YYS8Q~q9icJa3to8.GDVFl3VAABG~1TKkBY0Rds8"
+myTenantID = os.getenv('AZURE_TENANT_ID')
+myClientID = os.getenv('AZURE_CLIENT_ID')
+myClientSecret = os.getenv('AZURE_CLIENT_SECRET')
 
 credential = ClientSecretCredential(
     tenant_id=f"{myTenantID}",
@@ -45,8 +42,8 @@ credential = ClientSecretCredential(
     client_secret=f"{myClientSecret}",
 )
 
-keyVaultName = "workmKV"
-secretName = "myGovDataConnectionStr"   
+keyVaultName = os.getenv('KEY_VAULT_NAME')
+secretName = os.getenv('KEY_VAULT_SECRET')  
 KVUri = f"https://{keyVaultName}.vault.azure.net"    
 client = SecretClient(vault_url=KVUri, credential=credential)
 
@@ -60,8 +57,6 @@ sKey = "status eq 'current'"
 df = get_dataframe_from_table_storage_table('oDataABWarnings', table_service, sKey)
 df['lat'] = pd.to_numeric(df.lat)
 df['long'] = pd.to_numeric(df.long)
-#df.drop(columns=['RowKey', 'Timestamp', 'des3', 'des4', 'des5', 'des6', 'des7', 'desCount', 'displayType', 'extent', 'future', 'isBlocked', 'point', 'startTimestamp', 'status', 'lastRunTime'])
-df.drop(columns=['RowKey', 'Timestamp', 'des3', 'des4', 'des5', 'desCount', 'displayType', 'extent', 'future', 'isBlocked', 'point', 'startTimestamp', 'status', 'lastRunTime', 'etag'])
 
 ###### start st & plotly
 
@@ -133,4 +128,3 @@ with plot_spot:
     st.plotly_chart(fig,
                     theme="streamlit"
                     )
-
