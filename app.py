@@ -32,9 +32,9 @@ def get_data_from_table_storage_table(st, table_service, filter_query):
 
 ##################
 
-myTenantID = os.getenv('AZURE_TENANT_ID')
-myClientID = os.getenv('AZURE_CLIENT_ID')
-myClientSecret = os.getenv('AZURE_CLIENT_SECRET')
+myTenantID = "4ce25b52-c440-498c-a87d-973950aced4d"
+myClientID = "2ed9aaa7-33e9-4deb-b383-a4ff97481c88"
+myClientSecret = "YYS8Q~q9icJa3to8.GDVFl3VAABG~1TKkBY0Rds8"
 
 credential = ClientSecretCredential(
     tenant_id=f"{myTenantID}",
@@ -42,8 +42,8 @@ credential = ClientSecretCredential(
     client_secret=f"{myClientSecret}",
 )
 
-keyVaultName = os.getenv('KEY_VAULT_NAME')
-secretName = os.getenv('KEY_VAULT_SECRET')  
+keyVaultName = "workmKV"
+secretName = "myGovDataConnectionStr"   
 KVUri = f"https://{keyVaultName}.vault.azure.net"    
 client = SecretClient(vault_url=KVUri, credential=credential)
 
@@ -66,6 +66,14 @@ df_w = get_dataframe_from_table_storage_table('oDataABWarnings', table_service, 
 df_w['lat'] = pd.to_numeric(df_w.lat)
 df_w['long'] = pd.to_numeric(df_w.long)
 
+df_p = get_dataframe_from_table_storage_table('oDataABParking', table_service, sKey)
+df_p['lat'] = pd.to_numeric(df_p.lat)
+df_p['long'] = pd.to_numeric(df_p.long)
+
+df_e = get_dataframe_from_table_storage_table('oDataABEChargingStation', table_service, sKey)
+df_e['lat'] = pd.to_numeric(df_e.lat)
+df_e['long'] = pd.to_numeric(df_e.long)
+
 ###### start st & plotly
 
 st.set_page_config(page_title="oDataAB", page_icon="https://ftdata.blob.core.windows.net/images/logos/amc_logo_240.png")
@@ -76,7 +84,7 @@ sidebar = st.sidebar
 
 stoerung_selector = sidebar.radio(
     "Störungen",
-    ['Baustellen', 'Sperrungen', 'Warnungen'],
+    ['Baustellen', 'Sperrungen', 'Warnungen', 'Parkplätze', 'Ladestationen'],
     index=2
 )
 
@@ -84,16 +92,77 @@ if stoerung_selector == 'Warnungen':
     #st.write('a')
     AB = df_w.PartitionKey.unique()
     df_filter = df_w[df_w['PartitionKey'].isin(AB)]
+    cd = [
+            'title',
+            'subtitle',
+            'des1',
+            'des2',
+            'des3',
+            'des4',
+            'des5',
+            'des6'
+        ]
+    ht = '%{customdata[0]} <br>%{customdata[1]} <br>%{customdata[2]} <br>%{customdata[3]} <br>%{customdata[4]} <br>%{customdata[5]} <br>%{customdata[6]} <br>%{customdata[7]}'
     #st.write(AB)
 if stoerung_selector == 'Sperrungen':
     #st.write('b')
     AB = df_c.PartitionKey.unique()
     df_filter = df_c[df_c['PartitionKey'].isin(AB)]
+    cd = [
+            'title',
+            'subtitle',
+            'des1',
+            'des2',
+            'des3',
+            'des4',
+            'des5',
+            'des6'
+        ]
+    ht = '%{customdata[0]} <br>%{customdata[1]} <br>%{customdata[2]} <br>%{customdata[3]} <br>%{customdata[4]} <br>%{customdata[5]} <br>%{customdata[6]} <br>%{customdata[7]}'
     #st.write(AB)
 if stoerung_selector == 'Baustellen':
     #st.write('c')
     AB = df_r.PartitionKey.unique()
     df_filter = df_r[df_r['PartitionKey'].isin(AB)]
+    cd = [
+            'title',
+            'subtitle',
+            'des1',
+            'des2',
+            'des3',
+            'des4',
+            'des5',
+            'des6'
+        ]
+    ht = '%{customdata[0]} <br>%{customdata[1]} <br>%{customdata[2]} <br>%{customdata[3]} <br>%{customdata[4]} <br>%{customdata[5]} <br>%{customdata[6]} <br>%{customdata[7]}'
+    #st.write(AB)
+
+if stoerung_selector == 'Parkplätze':
+    #st.write('c')
+    AB = df_p.PartitionKey.unique()
+    df_filter = df_p[df_p['PartitionKey'].isin(AB)]
+    cd = [
+            df_filter['title'],
+            df_filter['subtitle'],
+            df_filter['LKW_No'],
+            df_filter['PKW_No'],
+            df_filter['pFeatureList']
+        ]
+    ht = '%{customdata[0]} <br>%{customdata[1]} <br>LKW: %{customdata[2]} <br>PKW: %{customdata[3]} <br>Ausstattung: %{customdata[4]}'
+    #st.write(AB)
+
+if stoerung_selector == 'Ladestationen':
+    #st.write('c')
+    AB = df_e.PartitionKey.unique()
+    df_filter = df_e[df_e['PartitionKey'].isin(AB)]
+    cd = [
+            df_filter['title'],
+            df_filter['subtitle'],
+            df_filter['des1'],
+            df_filter['des2'],
+            df_filter['des3'],
+        ]
+    ht = '%{customdata[0]} <br>%{customdata[1]} <br>%{customdata[2]} <br>%{customdata[3]} <br>%{customdata[4]}'
     #st.write(AB)
 
 
@@ -115,8 +184,8 @@ fig = px.scatter_mapbox(df_sLoc,
                         lon = df_sLoc['long'],
                         lat = df_sLoc['lat'],
                         zoom = 5,
-                        width = 640,
-                        height = 640,
+                        width = 700,
+                        height = 700,
                         title = stoerung_selector,
                         hover_name = df_sLoc['title'],
                         hover_data = {
@@ -124,28 +193,15 @@ fig = px.scatter_mapbox(df_sLoc,
                             "long": False,
                             "PartitionKey": False
                         },
-                        custom_data = [
-                            'title',
-                            'subtitle',
-                            'des1',
-                            'des2',
-                            'des3',
-                            'des4',
-                            'des5',
-                            'des6'
-                        ],
-                        labels = {
-                            'PartitionKey':'Autobahnen'
-                        }
+                        custom_data = cd,
                         )
 
-fig.update_traces(hovertemplate='%{customdata[0]} <br>%{customdata[1]} <br>%{customdata[2]} <br>%{customdata[3]} <br>%{customdata[4]} <br>%{customdata[5]} <br>%{customdata[6]} <br>%{customdata[7]}')
-fig.update_layout(hovermode="x")
+fig.update_traces(hovertemplate=ht)
 fig.update_layout(mapbox_style="open-street-map")
 fig.update_layout(margin={"r":0,"t":30,"l":0,"b":0})
 
 fig.update_mapboxes(center_lat=51)
-fig.update_mapboxes(center_lon=10.5)
+fig.update_mapboxes(center_lon=9)
 
 fig.update_layout(hoverlabel = dict(
     font_size = 10,
